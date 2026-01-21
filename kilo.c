@@ -27,7 +27,7 @@ int main() {
     char c;
     while(read(STDIN_FILENO, &c,1) == 1 && c != 'q') {
         if (iscntrl(c)) { //see whether they are control characters
-            printf("%d\n", c); //print if it's not
+            printf("%d\r\n", c); //print if it's not
         } else {
             printf("%d ('%c')\r\n",c,c);
         }
