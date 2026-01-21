@@ -15,8 +15,9 @@ void enableRawMode() {
     atexit(disableRawMode);
 
     struct termios raw = orig_termios;
-    raw.c_iflag &= ~(IXON);
-    raw.c_lflag &= ~(ECHO|ICANON|ISIG); //no line buffer and no screen
+    raw.c_iflag &= ~(ICRNL | IXON);
+    raw.c_oflag &= ~(OPOST);
+    raw.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG); //no line buffer and no screen
     tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 }
 
@@ -28,7 +29,7 @@ int main() {
         if (iscntrl(c)) { //see whether they are control characters
             printf("%d\n", c); //print if it's not
         } else {
-            printf("%d ('%c')\n",c,c);
+            printf("%d ('%c')\r\n",c,c);
         }
     }
     return 0;
