@@ -15,7 +15,8 @@ void enableRawMode() {
     atexit(disableRawMode);
 
     struct termios raw = orig_termios;
-    raw.c_lflag &= ~(ECHO|ICANON); //no line buffer and no screen
+    raw.c_iflag &= ~(IXON);
+    raw.c_lflag &= ~(ECHO|ICANON|ISIG); //no line buffer and no screen
     tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 }
 
