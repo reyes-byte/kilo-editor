@@ -5,8 +5,13 @@
 #include <termios.h>
 #include <unistd.h>
 
+// defines
+//
+#define CTRL_KEY(k) ((k) & 0x1f)
+
 struct termios orig_termios;
 
+// terminal
 void die(const char *s) {
     perror(s);
     exit(1);
@@ -35,18 +40,33 @@ void enableRawMode() {
     };
 }
 
+char editorReadKey() {
+    int nread;
+    char c;
+    //continue reading the byte till it's eof
+    while((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+        if(nread == -1 && errno != EAGAIN) die("read");
+    }
+    return c;
+}
 
+void editorProcessKeypress()
+{
+    char c = editorReadKey();
+
+    switch(c) {
+        case CTRL_KEY('q'):
+            exit(0);
+            break;
+    }
+}
+// initiatlisaiton
 int main() {
     enableRawMode();
+    //raw mode entrered
+
     while(1) {
-        char c = '\0';
-        if (read(STDIN_FILENO, &c,1) == -1 && errno != EAGAIN) die("read");
-        if (iscntrl(c)) { //see whether they are control characters
-            printf("%d\r\n", c); //print if it's not
-        } else {
-            printf("%d ('%c')\r\n",c,c);  
-        }
-        if (c == 'q') break;
+        editorProcessKeypress();
     }
 
     return 0;
