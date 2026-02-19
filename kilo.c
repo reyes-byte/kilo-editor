@@ -1,4 +1,7 @@
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
 #define _GNU_SOURCE
+
 
 #include <ctype.h>
 #include <errno.h>
@@ -52,7 +55,7 @@ struct editorConfig E;
 // terminal
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4); 
-    write(STDOUT_FILENO, "\x1b[H]", 3);
+    write(STDOUT_FILENO, "\x1b[H", 3);
 
     perror(s);
     exit(1);
@@ -119,7 +122,7 @@ int editorReadKey() {
                 }
             }
         }
-        else if (seq[0] == '0') {
+        else if (seq[0] == 'O') {
             switch(seq[1]) {
                 case 'H': return HOME_KEY;
                 case 'F': return END_KEY;
@@ -144,13 +147,15 @@ int getCursorPosition(int *rows, int *cols) {
         if (buf[i] == 'R') break;
         i++;
     }     
+
+    buf[i] = '\0';
      if (buf[0] != '\x1b' || buf[1] != '[') return -1;
      if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) return -1;
 
     return 0;
 }
 
-//get window size
+//get window size   
 int getWindowSize(int *rows, int *cols) {
     struct winsize ws;
 
@@ -213,7 +218,7 @@ void editorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.screenrows; ++y) {
         if (y >= E.numrows) {
-            if (y == E.screencols / 3) {
+            if (E.numrows == 0 && y == E.screenrows / 3) {
                 char welcome[80];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
             "Kilo editor -- version %s", KILO_VERSION);
@@ -241,35 +246,13 @@ void editorDrawRows(struct abuf *ab) {
         }
     
     }
-    for (y = 0; y < E.screenrows; ++y) {
-        if (y == E.screencols / 3) {
-            char welcome[80];
-            int welcomelen = snprintf(welcome, sizeof(welcome),
-        "Kilo editor -- version %s", KILO_VERSION);
-            if (welcomelen > E.screencols) welcomelen = E.screencols;
-            int padding = (E.screencols - welcomelen)/2;
-            if (padding) {
-                abAppend(ab, "~", 1);
-                padding--;
-            }
-            while (padding--) abAppend(ab, " ", 1);
-            abAppend(ab, welcome, welcomelen);
-        } else {
-        abAppend(ab, "~", 1);
-        }
-        abAppend(ab, "\x1b[K", 3);
-        if (y < E.screenrows - 1) {
-            abAppend(ab, "\r\n", 2);
-        }
-    
-    }
 }
 
 void editorRefreshScreen() {
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6); //turn cursor off
-    abAppend(&ab, "\x1b[H]", 3); //default is row 1 column 1
+    abAppend(&ab, "\x1b[H", 3); //default is row 1 column 1
 
     editorDrawRows(&ab);
 
@@ -318,7 +301,7 @@ void editorProcessKeypress()
     switch(c) {
         case CTRL_KEY('q'):
             write(STDOUT_FILENO, "\x1b[2J", 4); 
-            write(STDOUT_FILENO, "\x1b[H]", 3);
+            write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
             break;
         case HOME_KEY:
