@@ -156,6 +156,7 @@ int getCursorPosition(int *rows, int *cols) {
     return 0;
 }
 
+
 //get window size   
 int getWindowSize(int *rows, int *cols) {
     struct winsize ws;
@@ -225,10 +226,10 @@ void abFree(struct abuf *ab) {
 /*** output  ***/
 
 void editorScroll() {
-    if (E.cy < E.rowoff) {
-        E.rowoff = E.cy;
+    if (E.cy < E.rowoff) { //move up
+        E.rowoff = E.cy; //E.rowoff is always at the top
     }
-    if (E.cy >= E.screenrows + E.rowoff) {
+    if (E.cy >= E.screenrows + E.rowoff) { //move down
         E.rowoff = E.cy - E.screenrows + 1;
     }
     
@@ -281,7 +282,7 @@ void editorRefreshScreen() {
     editorDrawRows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, E.cx + 1); //string number print formatted
     abAppend(&ab, buf, strlen(buf));//default is row 1 column 1
 
     abAppend(&ab, "\x1b[?25h", 6); //turn cursor on
@@ -309,7 +310,7 @@ void editorMoveCursor(int key) {
             }
             break;
         case ARROW_DOWN:
-            if (E.cy < E.screenrows) {
+            if (E.cy < E.numrows) {
                 E.cy++;
             } 
             break;
