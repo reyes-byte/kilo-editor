@@ -233,6 +233,12 @@ void editorScroll() {
     if (E.cy >= E.screenrows + E.rowoff) { //move down
         E.rowoff = E.cy - E.screenrows + 1;
     }
+    if (E.cx < E.coloff) {
+        E.coloff = E.cx;
+    }
+    if (E.cx >= E.screencols + E.coloff) {
+        E.coloff = E.cx - E.screencols + 1;
+    }
     
 }
 
@@ -261,7 +267,7 @@ void editorDrawRows(struct abuf *ab) {
             if (len < 0) len = 0; //can't draw negative chars
             //truncate if row size is greather than the screen size
             if (len > E.screencols ) len = E.screencols;
-            abAppend(ab, E.row[filerow].chars[E.coloff], len);   
+            abAppend(ab, &E.row[filerow].chars[E.coloff], len);   
         }
 
         abAppend(ab, "\x1b[K", 3); //clears the right side of whatever printed
@@ -284,7 +290,7 @@ void editorRefreshScreen() {
     editorDrawRows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, E.cx + 1); //string number print formatted
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.cx - E.coloff) + 1); //string number print formatted
     abAppend(&ab, buf, strlen(buf));//default is row 1 column 1
 
     abAppend(&ab, "\x1b[?25h", 6); //turn cursor on
@@ -302,9 +308,7 @@ void editorMoveCursor(int key) {
             }
             break;
         case ARROW_RIGHT:
-            if (E.cx != E.screencols - 1) {
                 E.cx++;
-            }
             break;
         case ARROW_UP: 
             if (E.cy != 0) {
