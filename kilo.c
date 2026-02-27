@@ -306,11 +306,18 @@ void editorMoveCursor(int key) {
         case ARROW_LEFT:
             if (E.cx != 0){
                 E.cx--;
+            } else if (E.cy > 0) {
+                E.cy--;
+                E.cx = E.row[E.cy].size; // size of the row itself
             }
             break;
         case ARROW_RIGHT:
-            if (row && E.cx < row ->size)
+            if (row && E.cx < row ->size){
                 E.cx++;
+            } else if (row && E.cx == row->size) {
+                E.cy ++;
+                E.cx = 0; //size of the row 
+            }
             break;
         case ARROW_UP: 
             if (E.cy != 0) {
