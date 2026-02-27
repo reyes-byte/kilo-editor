@@ -81,7 +81,7 @@ void enableRawMode() {
     raw.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG); //no line buffer and no screen
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 100;
-    if (tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) {
         die("tcsetattr");
     };
 }
@@ -162,7 +162,7 @@ int getCursorPosition(int *rows, int *cols) {
 int getWindowSize(int *rows, int *cols) {
     struct winsize ws;
 
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1|| ws.ws_col == 0) {
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1|| ws.ws_col == 0) { //get window size
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
         return getCursorPosition(rows, cols);
     } else {
@@ -323,6 +323,13 @@ void editorMoveCursor(int key) {
             } 
             break;
     }
+
+    row = (E.cy > E.numrows) ? NULL : &E.row[E.cy];
+    int rowlen = row ? row->size : 0; //next row when cy increases
+    if (E.cx > rowlen) {
+        E.cx = rowlen;
+    }
+
 
 }
 
