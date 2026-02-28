@@ -112,8 +112,8 @@ int editorReadKey() {
                         case '1': return HOME_KEY;
                         case '3': return DEL_KEY;
                         case '4': return END_KEY;
-                        case '5': return PAGE_DOWN;
-                        case '6': return PAGE_UP;
+                        case '5': return PAGE_UP;
+                        case '6': return PAGE_DOWN;
                         case '7': return HOME_KEY;
                         case '8': return END_KEY;
                     }
@@ -177,7 +177,7 @@ int getWindowSize(int *rows, int *cols) {
     }
 }
 /*Row operations*/
-int editorRowCxtoRx(erow *row, int cx) {
+int  editorRowCxtoRx(erow *row, int cx) {
     int rx = 0;
     int j;
     for (j = 0; j < cx; j++) {
@@ -274,8 +274,10 @@ void abFree(struct abuf *ab) {
 /*** output  ***/
 
 void editorScroll() {
-    E.rx = E.cx;
-    E.rx = editorRowCxtoRx(&E.row[E.cy], E.cx);
+    E.rx = 0;
+    if (E.cy < E.numrows) {
+        E.rx = editorRowCxtoRx(&E.row[E.cy], E.cx);
+    }
 
     if (E.cy < E.rowoff) { //move up
         E.rowoff = E.cy; //E.rowoff is always at the top
@@ -410,9 +412,12 @@ void editorProcessKeypress()
         case PAGE_UP:
         case PAGE_DOWN:
             {
-                int times = E.screenrows;
-                while (times--)
-                    editorMoveCursor(c == PAGE_UP ? ARROW_UP: ARROW_DOWN);  
+                if (c == PAGE_UP) {
+                    E.cy = E.rowoff;
+                } else if (c == PAGE_DOWN) {
+                    E.cy = E.rowoff + E.screenrows - 1;
+                    if (E.cy > E.numrows) E.cy = E.numrows;
+                }
             }
             break;
         case ARROW_UP:    
