@@ -323,12 +323,23 @@ void editorDrawRows(struct abuf *ab) {
         }
 
         abAppend(ab, "\x1b[K", 3); //clears the right side of whatever printed
-        if (y < E.screenrows - 1) {
-            abAppend(ab, "\r\n", 2);
-        }
+        abAppend(ab, "\r\n", 2);
+        
     
     }
 }
+
+void editorDrawStatusBar(struct abuf *ab) {
+    abAppend(ab, "\x1b[7m", 4); //switches to inverted colors
+    int len = 0; 
+    while (len < E.screencols) {
+        abAppend(ab, " ", 1);
+        len++;
+    }
+    abAppend(ab, "\x1b[m", 3); //switches back to normal formatting
+
+}
+
 
 void editorRefreshScreen() {
 
@@ -340,6 +351,7 @@ void editorRefreshScreen() {
     abAppend(&ab, "\x1b[H", 3); //default is row 1 column 1
 
     editorDrawRows(&ab);
+    editorDrawStatusBar(&ab);
 
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1); //string number print formatted
@@ -407,7 +419,9 @@ void editorProcessKeypress()
             E.cx = 0;
             break;
         case END_KEY:
-            E.cx = E.screencols - 1;
+            if (E.cy < E.numrows) {
+                E.cx = E.row[E.cy].size;
+            }
             break;
         case PAGE_UP:
         case PAGE_DOWN:
@@ -440,6 +454,9 @@ void initEditor() {
     E.numrows = 0;
     E.row = NULL;
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
+    
+    E.screenrows -= 1; //decrements screenrows such that it doesn't try to draw a line of text
+    //at the bottom of the screen
 }
 int main(int argc, char *argv[]) {
     enableRawMode();
