@@ -5,14 +5,15 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <stdio.h>
 #include <termios.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
-
+#include <time.h>
 
 
 
@@ -54,6 +55,8 @@ struct editorConfig {
     int numrows;
     erow *row;
     char *filename;
+    char statusmsg[80];
+    time_t statusmsg_time;
     struct termios orig_termios;
     
 };
@@ -347,15 +350,24 @@ void editorDrawStatusBar(struct abuf *ab) {
     while (len < E.screencols) {
         if (E.screencols - len == rlen) {
             abAppend(ab, rstatus, rlen);
+            break;
         } else {
             abAppend(ab, " ", 1);
             len++;
         }
     }
     abAppend(ab, "\x1b[m", 3); //switches back to normal formatting
-
+    abAppend(ab, "\r\n", 2);
 }
 
+void editorDrawMessageBar(struct abuf *ab) {
+    abAppend(ab, "\x1b[K" , 3); //clears the end of line
+    int msglen = strlen(E.statusmsg);
+    if (msglen > E.screencols) msglen = E.screencols;
+    if (msglen && time(NULL) - E.statusmsg_time < 5) 
+        abAppend(ab, E.statusmsg, msglen);
+
+}
 
 void editorRefreshScreen() {
 
@@ -368,6 +380,7 @@ void editorRefreshScreen() {
 
     editorDrawRows(&ab);
     editorDrawStatusBar(&ab);
+    editorDrawMessageBar(&ab);
 
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1); //string number print formatted
@@ -377,6 +390,15 @@ void editorRefreshScreen() {
     //write the buffer's content to standard output
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
+}
+
+void editorSetStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
+    va_end(ap);
+
+    E.statusmsg_time = time(NULL);
 }
 
 /***input ***/
@@ -470,9 +492,12 @@ void initEditor() {
     E.numrows = 0;
     E.row = NULL;
     E.filename = NULL;
+    E.statusmsg[0] = '\0';
+    E.statusmsg_time = 0;
+    
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
     
-    E.screenrows -= 1; //decrements screenrows such that it doesn't try to draw a line of text
+    E.screenrows -= 2; //decrements screenrows such that it doesn't try to draw a line of text
     //at the bottom of the screen
 }
 int main(int argc, char *argv[]) {
@@ -482,6 +507,8 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]); //opening and reading file from disk
     }
     //raw mode entrered
+
+    editorSetStatusMessage("HELP: CTRL-Q = quit");
 
     while(1) {
         editorRefreshScreen();
