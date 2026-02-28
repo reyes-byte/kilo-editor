@@ -46,6 +46,7 @@ typedef struct erow {
 // store the width and height of the terminal
 struct editorConfig {
     int cx, cy;
+    int rx;
     int rowoff; //keep track of what row of the file the user is currently scrolled to
     int coloff;
     int screenrows;
@@ -176,6 +177,18 @@ int getWindowSize(int *rows, int *cols) {
     }
 }
 /*Row operations*/
+int editorRowCxtoRx(erow *row, int cx) {
+    int rx = 0;
+    int j;
+    for (j = 0; j < cx; j++) {
+        if (row->chars[j] == '\t') 
+            rx += (KILO_TAB_STOP - 1) - (rx % KILO_TAB_STOP);
+        rx++;
+    }
+    return rx;
+}
+
+
 void editorUpdateRow(erow *row) {
     free(row->render);
     row->render = malloc(row->size + 1);
@@ -261,17 +274,20 @@ void abFree(struct abuf *ab) {
 /*** output  ***/
 
 void editorScroll() {
+    E.rx = E.cx;
+    E.rx = editorRowCxtoRx(&E.row[E.cy], E.cx);
+
     if (E.cy < E.rowoff) { //move up
         E.rowoff = E.cy; //E.rowoff is always at the top
     }
     if (E.cy >= E.screenrows + E.rowoff) { //move down
         E.rowoff = E.cy - E.screenrows + 1;
     }
-    if (E.cx < E.coloff) {
-        E.coloff = E.cx;
+    if (E.rx < E.coloff) {
+        E.coloff = E.rx;
     }
-    if (E.cx >= E.screencols + E.coloff) {
-        E.coloff = E.cx - E.screencols + 1;
+    if (E.rx >= E.screencols + E.coloff) {
+        E.coloff = E.rx - E.screencols + 1;
     }
     
 }
@@ -324,7 +340,7 @@ void editorRefreshScreen() {
     editorDrawRows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.cx - E.coloff) + 1); //string number print formatted
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1); //string number print formatted
     abAppend(&ab, buf, strlen(buf));//default is row 1 column 1
 
     abAppend(&ab, "\x1b[?25h", 6); //turn cursor on
@@ -413,6 +429,7 @@ void initEditor() {
 
     E.cx = 0;
     E.cy = 0;
+    E.rx = 0;
     E.rowoff = 0;
     E.coloff = 0;
     E.numrows = 0;
