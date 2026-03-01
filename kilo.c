@@ -245,7 +245,13 @@ void editorRowInsertChar(erow *row, int at, int c) {
 }
 
 /*** editor operations ***/
-
+void editorInsertChar(int c) {
+    if (E.cy == E.numrows) {
+        editorAppendRow("",0); //append a new row (giving a brand new erow)
+    }
+    editorRowInsertChar(&E.row[E.cy], E.cx, c);
+    E.cx++;
+}
 
 
 /*    file i/o     */
@@ -491,6 +497,10 @@ void editorProcessKeypress()
         case ARROW_LEFT:
             editorMoveCursor(c);
             break;   
+
+        default:
+            editorInsertChar(c);
+            break;
 
     }
 }
