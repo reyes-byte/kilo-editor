@@ -65,6 +65,17 @@ struct editorConfig {
 
 struct editorConfig E;
 
+
+//status checking
+void editorSetStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
+    va_end(ap);
+
+    E.statusmsg_time = time(NULL);
+}
+
 // terminal
 void die(const char *s) {
     write(STDOUT_FILENO, "\x1b[2J", 4); 
@@ -303,10 +314,20 @@ void editorSave() {
     char *buf = editorRowsToString(&len);
 
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644); 
-    ftruncate(fd, len);
-    write(fd, buf, len);
-    close(fd);
+    if (fd != -1) {
+        if (ftruncate(fd, len) != -1) {
+            if (write(fd, buf, len) == len) {
+                close(fd);
+                free(buf);
+                editorSetStatusMessage("%d bytes writteen to disk", len);
+                return;
+            } 
+        }
+        close(fd);
+    }
+
     free(buf);
+    editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
 }
 
 /*** append buffer ***/
@@ -444,14 +465,6 @@ void editorRefreshScreen() {
     abFree(&ab);
 }
 
-void editorSetStatusMessage(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
-    va_end(ap);
-
-    E.statusmsg_time = time(NULL);
-}
 
 /***input ***/
 void editorMoveCursor(int key) {
@@ -508,6 +521,10 @@ void editorProcessKeypress()
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
             break;
+        case CTRL_KEY('s'):
+            editorSave();
+            break;
+        
         case HOME_KEY:
             E.cx = 0;
             break;
@@ -576,8 +593,7 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]); //opening and reading file from disk
     }
     //raw mode entrered
-
-    editorSetStatusMessage("HELP: CTRL-Q = quit");
+    editorSetStatusMessage("HELP: CTRL-Q = quit | Ctrl-Q to quit");
 
     while(1) {
         editorRefreshScreen();
