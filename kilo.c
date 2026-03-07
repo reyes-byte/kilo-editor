@@ -265,6 +265,23 @@ void editorInsertChar(int c) {
 }
 
 
+void editorRowDelChar(erow *row, int at) {
+    if (at < 0 || at >= row->size) return;
+    memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
+    row->size--;
+    editorUpdateRow(row);
+    E.dirty++;
+}
+
+void editorDelChar() {
+    if (E.cy == E.numrows) return;
+
+    erow *row = &E.row[E.cy];
+    if (E.cx > 0) {
+        editorRowDelChar(row, E.cx - 1);
+        E.cx--;
+    }
+}
 /*    file i/o     */
 char *editorRowsToString(int *buflen) {
     int totlen = 0;
@@ -545,7 +562,8 @@ void editorProcessKeypress() {
         case BACKSPACE:
         case CTRL_KEY('h'):
         case DEL_KEY:
-        /* TODO */
+        if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+        editorDelChar();
         break;
             
         
@@ -574,6 +592,8 @@ void editorProcessKeypress() {
             break;
             
         }
+
+        quit_times = KILO_QUIT_TIMES;
     }
     // initiatlisaiton
 void initEditor() {
