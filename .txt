@@ -1,4 +1,10 @@
+.99999
+= 999 
+9999
 
+.9999
+int x = .999
+int x = 3.55535
 dkdkdkdkddddfffffffffffooooooooooooooooo f ss
 ffs
 xxx
