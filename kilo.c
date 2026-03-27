@@ -277,7 +277,8 @@ void editorUpdateSyntax(erow *row) {
 
     int prev_sep = 1; //keeps track of whether its a sep
     int in_string = 0;
-    int in_comment = 0;
+    //true if prev row has an unclosed multi line comment
+    int in_comment = (row->idx > 0 && E.row[row->idx - 1].hl_open_comment);
 
 
     int i = 0;
@@ -299,6 +300,7 @@ void editorUpdateSyntax(erow *row) {
                     i += mce_len;
                     in_comment = 0;
                     prev_sep = 1;
+                    continue;
                 } else {
                     i++;
                     continue;
@@ -373,6 +375,11 @@ void editorUpdateSyntax(erow *row) {
         prev_sep = is_seperator(c);
         ++i;
     }
+
+    int changed = (row->hl_open_comment != in_comment);
+    row->hl_open_comment = in_comment; //if on top is in comment open comment is true 
+    if (changed && row ->idx + 1 < E.numrows) 
+        editorUpdateSyntax(&E.row[row->idx + 1]);
 }
 
 int editorSyntaxToColour(int hl) {
@@ -481,6 +488,7 @@ void editorInsertRow(int at, char *s, size_t len) {
 
     E.row = realloc(E.row, sizeof(erow)*(E.numrows + 1));
     memmove(&E.row[at + 1], &E.row[at], sizeof(erow)*(E.numrows - at));
+    for (int j = at + 1; j <= E.numrows; j++) E.row[j].idx++; //update idx if row is inserted
 
     E.row[at].idx = at; //for every erow we give it an index
 
@@ -492,7 +500,7 @@ void editorInsertRow(int at, char *s, size_t len) {
     E.row[at].rsize = 0;
     E.row[at].render = NULL;
     E.row[at].hl = NULL;
-    E.row[at].hl_open_comment = ;
+    E.row[at].hl_open_comment = 0;
     editorUpdateRow(&E.row[at]);
     
     E.numrows++;
@@ -509,6 +517,7 @@ void editorDelRow(int at) {
     if (at < 0 || at >= E.numrows) return;
     editorFreeRow(&E.row[at]);
     memmove(&E.row[at], &E.row[at + 1], sizeof(erow)*(E.numrows - at - 1));
+    for (int j = at; j < E.numrows- 1; j++) E.row[j].idx--;
     E.numrows--;
     E.dirty++;
 }
