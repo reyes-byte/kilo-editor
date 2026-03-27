@@ -278,7 +278,7 @@ void editorUpdateSyntax(erow *row) {
     int prev_sep = 1; //keeps track of whether its a sep
     int in_string = 0;
     //true if prev row has an unclosed multi line comment
-    int in_comment = (row->idx > 0 && E.row[row->idx - 1].hl_open_comment);
+    int in_comment = (row->idx > 0 && E.row[row->idx - 1].hl_open_comment); //read prevuisy rows
 
 
     int i = 0;
