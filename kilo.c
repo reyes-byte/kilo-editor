@@ -68,11 +68,13 @@ struct editorSyntax {
 };
 
 typedef struct erow {
+    int idx;
     int size;
     int rsize; //tracks exact number of characters
     char *chars;
     char *render;
     unsigned char *hl; //ints in the range of 0-256
+    int hl_open_comment;
 } erow;
 
 
@@ -283,7 +285,7 @@ void editorUpdateSyntax(erow *row) {
         char c = row -> render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1]: HL_NORMAL;
 
-        if (scs_len && !in_string) {
+        if (scs_len && !in_string && !in_comment) {
             if (!strncmp(&row->render[i], scs, scs_len)){
                 memset(&row->hl[i], HL_COMMENT, row->rsize - i); //highlight the line
                 break;
@@ -293,16 +295,21 @@ void editorUpdateSyntax(erow *row) {
             if (in_comment) {
                 row->hl[i] = HL_MLCOMMENT;
                 if (!strncmp(&row->render[i], mce, mce_len)) {
-
+                    memset(&row->hl[i], HL_MLCOMMENT, mce_len);
+                    i += mce_len;
+                    in_comment = 0;
+                    prev_sep = 1;
+                } else {
+                    i++;
+                    continue;
                 }
-            } 
-        } else if (!strncmp(&row->render[i], mcs, mcs_len)) {
+            } else if (!strncmp(&row->render[i], mcs, mcs_len)) {
             memset(&row->hl[i], HL_MLCOMMENT, mcs_len);
-            i += mcs_len;
+            i += mcs_len; //jump to the end of the comment before */
             in_comment = 1;
-            continue
+            continue;
         }
-
+    }
         
 
         if (E.syntax -> flags & HL_HIGHLIGHT_STRINGS) {
@@ -475,6 +482,8 @@ void editorInsertRow(int at, char *s, size_t len) {
     E.row = realloc(E.row, sizeof(erow)*(E.numrows + 1));
     memmove(&E.row[at + 1], &E.row[at], sizeof(erow)*(E.numrows - at));
 
+    E.row[at].idx = at; //for every erow we give it an index
+
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
@@ -483,6 +492,7 @@ void editorInsertRow(int at, char *s, size_t len) {
     E.row[at].rsize = 0;
     E.row[at].render = NULL;
     E.row[at].hl = NULL;
+    E.row[at].hl_open_comment = ;
     editorUpdateRow(&E.row[at]);
     
     E.numrows++;
