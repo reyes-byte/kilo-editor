@@ -32,6 +32,7 @@ git clone [https://github.com/YOUR_USERNAME/kilo-editor.git](https://github.com/
 cd kilo-editor
 make
 
-### 📜 Acknowledgements
+```
+## 📜 Acknowledgements
 
 This project was built following the [Build Your Own Text Editor](https://viewsourcecode.org/snaptoken/kilo/) tutorial by Jeremy Ruten, which is based on `kilo` by [antirez](https://github.com/antirez/kilo).
