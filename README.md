@@ -31,3 +31,7 @@ Because Kilo has no external dependencies, compiling it is incredibly fast and s
 git clone [https://github.com/YOUR_USERNAME/kilo-editor.git](https://github.com/YOUR_USERNAME/kilo-editor.git)
 cd kilo-editor
 make
+
+## 📜 Acknowledgements
+
+This project was built following the [Build Your Own Text Editor](https://viewsourcecode.org/snaptoken/kilo/) tutorial by Jeremy Ruten, which is based on `kilo` by [antirez](https://github.com/antirez/kilo).
